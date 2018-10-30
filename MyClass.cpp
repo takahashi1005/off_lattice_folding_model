@@ -115,7 +115,7 @@ double MyClass::radius_of_gyration(){
 double MyClass::bond_interaction(int n, int i){
   
   return - k * (Protein[n].q[i]-Protein[n-1].q[i]) * (1.0 - 1.0 / abs(Protein[n].q - Protein[n-1].q));
-  
+
 }
 
 //----------------------------------------------------------------------
@@ -141,6 +141,44 @@ double MyClass::HPN_interaction(int n,int i){
 }
 
 //----------------------------------------------------------------------
+// Angle
+//----------------------------------------------------------------------
+double MyClass::Theta(std::vector<double> v1, std::vector<double> v2, int i){
+  double theta = angle(v1,v2);
+  double ip = IP(v1,v2);
+
+  return k_theta * (theta - theta_zero) / sqrt( pow(abs(v1)*abs(v2), 2.0) -ip *ip) * (v2[i] - IP(v1, v2) / pow(abs(v1), 2.0) * v1[i] );
+}
+
+double MyClass::angle_interaction(int n, int i){
+  if( n == 1){
+    std::vector<double> v2 = Protein[n].q - Protein[n-1].q;
+    std::vector<double> v3 = Protein[n+1].q - Protein[n].q;
+    std::vector<double> v4 = Protein[n+2].q - Protein[n+1].q;
+    return Theta((-1.0) * v2, v3, i) - Theta(v3, (-1.0) * v2, i) + Theta((-1.0) * v3, v4, i);
+
+  } else if( n == ProteinLength - 2){
+    std::vector<double> v1 = Protein[n-1].q - Protein[n-2].q;
+    std::vector<double> v2 = Protein[n].q - Protein[n-1].q;
+    std::vector<double> v3 = Protein[n+1].q - Protein[n].q;
+    return Theta(v2,(-1.0) * v1,i) - Theta((-1.0) * v2, v3, i) - Theta(v3, (-1.0) * v2, i);
+
+  } else if( n == ProteinLength - 1){
+    std::vector<double> v1 = Protein[n-1].q - Protein[n-2].q;
+    std::vector<double> v2 = Protein[n].q - Protein[n-1].q;
+    return Theta(v2,(-1.0) * v1,i);
+
+  } else {
+    std::vector<double> v1 = Protein[n-1].q - Protein[n-2].q;
+    std::vector<double> v2 = Protein[n].q - Protein[n-1].q;
+    std::vector<double> v3 = Protein[n+1].q - Protein[n].q;
+    std::vector<double> v4 = Protein[n+2].q - Protein[n+1].q;
+    return Theta(v2,(-1.0) * v1,i) - Theta((-1.0) * v2, v3, i) - Theta(v3, (-1.0) * v2, i) + Theta((-1.0) * v3, v4, i);
+  }
+}
+
+
+//----------------------------------------------------------------------
 // Equation of Motion
 //----------------------------------------------------------------------
 
@@ -151,12 +189,12 @@ double MyClass::F(double t, int n, int i) {
 double MyClass::G( double t, int n, int i) {
   if (n == ProteinLength-1) {
 		if(i == 0){
-      return  bond_interaction(n,0)/* + HPN_interaction(n,i) + ExternalForce*/ - Protein[n].p[i];
+      return  bond_interaction(n,0) + HPN_interaction(n,i) + ExternalForce - Protein[n].p[i] + angle_interaction(n,i);
     } else {
-      return bond_interaction(n,i)/* + HPN_interaction(n,i)*/ - Protein[n].p[i];
+      return bond_interaction(n,i) + HPN_interaction(n,i) - Protein[n].p[i] + angle_interaction(n,i);
     }
   }	else {
-    return bond_interaction(n,i) - bond_interaction(n+1,i)/* + HPN_interaction(n,i)*/ - Protein[n].p[i];
+    return bond_interaction(n,i) - bond_interaction(n+1,i) + HPN_interaction(n,i) - Protein[n].p[i] + angle_interaction(n,i);
   }
 }
 
@@ -296,14 +334,4 @@ double MyClass::test(){
     }
   }
   return Energy/(double)(ProteinLength -1);
-}
-
-void MyClass::cdview_output(std::ostream &os){
-  for(int i=0;i < ProteinLength; ++i){
-    os << i << " ";
-    if(Protein[i].c == H) os << "0" << " ";
-    else if(Protein[i].c == P) os << "2" << " ";
-    else if(Protein[i].c == N) os << "1" << " ";
-    os << Protein[i].q << std::endl;
-  }
 }

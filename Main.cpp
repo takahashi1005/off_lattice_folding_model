@@ -1,9 +1,8 @@
 #include <chrono>
 #include <cmath>
 #include <fstream>
+#include <sstream>
 #include <iostream>
-#include <random>
-#include <vector>
 #include "mt.h"
 #include "parameter.hpp"
 #include "MyClass.hpp"
@@ -16,23 +15,31 @@ int main() {
 // clock
 	std::chrono::system_clock::time_point start, mid, end;
 	start = std::chrono::system_clock::now();
-// random number
-	std::random_device rnd;
-	MT::SetSeed(rnd());
 
 	double t=0.0;
   MyClass gamma;
   double progress;
 
+// file name
+  std::stringstream fss,gss;
+  fss << "temp.data";
+  gss << "position.data";
+
+// 出力
+	std::ofstream fout,gout;
+  fout.open(fss.str());
+  gout.open(gss.str());
+
+// output precision
 	std::cout.setf(std::ios::fixed);
 	std::cout.precision(3);
 
-	std::ofstream fout("data.txt");  
   fout.setf(std::ios::fixed);
 	fout.precision(6);
+  gout.setf(std::ios::fixed);
+	gout.precision(6);
 
 //  gamma.IncrementNeighbor();
-/*
   fout << "#Setting" << std::endl;
   fout << "#ProteinLength = " << ProteinLength << std::endl; 
   fout << "#spring constant = " << k << std::endl;
@@ -50,7 +57,7 @@ int main() {
 
   fout << "#time Temp radius_of_gyration" << std::endl;
   fout << t << " " << gamma.temperature() << " " << gamma.radius_of_gyration() << std::endl;
-*/
+
 //----------------------------------------------------------------------
 // solve using Runge Kutta
 //----------------------------------------------------------------------
@@ -67,16 +74,17 @@ int main() {
     */
 
     if(i % term == 0){
- //     fout << t << " " << gamma.temperature() << " " << gamma.radius_of_gyration() << std::endl;
+      fout << t << " " << gamma.temperature() << " " << gamma.radius_of_gyration() << std::endl;
 
 			mid = std::chrono::system_clock::now();
       progress=t/tmax;
       std::cout << 100*progress << "%    " <<  "Estimated remainding time is " << (1.0-progress)*std::chrono::duration_cast<std::chrono::seconds>(mid-start).count()/progress << "seconds     \r" << std::flush;
     }   
   }
-  gamma.cdview_output(fout);
+  gamma.output_position(gout);
 	
   fout.close();	
+  gout.close();
 	end = std::chrono::system_clock::now();
 
 	std::cout << "\n" << "Calculation ended. Spended " << std::chrono::duration_cast<std::chrono::seconds>(end-start).count() << " seconds" << std::endl;

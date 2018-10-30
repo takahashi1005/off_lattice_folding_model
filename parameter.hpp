@@ -15,6 +15,10 @@ static const double epsilon_h = 1.0;
 static const double epsilon_p = 1.0;
 static const double sigma = 0.3;
 
+// angle interaction
+static const double theta_zero = M_PI / 6.0;
+static const double k_theta = 1.0e4;
+
 // ATP binding
 static const double k_bound = 2.0e-1;
 static const double k_unbound = 3.0e-1;
