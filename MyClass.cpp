@@ -189,12 +189,12 @@ double MyClass::F(double t, int n, int i) {
 double MyClass::G( double t, int n, int i) {
   if (n == ProteinLength-1) {
 		if(i == 0){
-      return  bond_interaction(n,0) + HPN_interaction(n,i) + ExternalForce - Protein[n].p[i] + angle_interaction(n,i);
+      return  bond_interaction(n,0) + HPN_interaction(n,i) + ExternalForce - Protein[n].p[i] /*+ angle_interaction(n,i)*/;
     } else {
-      return bond_interaction(n,i) + HPN_interaction(n,i) - Protein[n].p[i] + angle_interaction(n,i);
+      return bond_interaction(n,i) + HPN_interaction(n,i) - Protein[n].p[i] /*+ angle_interaction(n,i)*/;
     }
   }	else {
-    return bond_interaction(n,i) - bond_interaction(n+1,i) + HPN_interaction(n,i) - Protein[n].p[i] + angle_interaction(n,i);
+    return bond_interaction(n,i) - bond_interaction(n+1,i) + HPN_interaction(n,i) - Protein[n].p[i] /*+ angle_interaction(n,i)*/;
   }
 }
 
