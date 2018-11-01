@@ -14,6 +14,9 @@ MyClass::MyClass(){
 	MT::SetSeed(rnd());
 
   std::vector<double> q_previous(dim,0.0);
+  double z;
+  double phi;
+
 	double v;
 	double ss=0.0;
 
@@ -29,7 +32,13 @@ MyClass::MyClass(){
   Protein[0].c = Sequence[0];
   for(int n=1;n<ProteinLength;++n){
 
-    q_previous[0] += 1.0;
+    z = 2.0 * MT::GetDouble() - 1.0;
+    phi = 2.0 * M_PI * MT::GetDouble();
+
+    q_previous[0] += sqrt(1 - z*z) * cos(phi);
+    q_previous[1] += sqrt(1 - z*z) * sin(phi);
+    q_previous[2] += z;
+
     Protein[n].q = q_previous;
 
     for(auto &x :Protein[n].p){
@@ -151,30 +160,46 @@ double MyClass::Theta(std::vector<double> v1, std::vector<double> v2, int i){
 }
 
 double MyClass::angle_interaction(int n, int i){
+  double force = 0.0;
+
   if( n == 1){
     std::vector<double> v2 = Protein[n].q - Protein[n-1].q;
     std::vector<double> v3 = Protein[n+1].q - Protein[n].q;
     std::vector<double> v4 = Protein[n+2].q - Protein[n+1].q;
-    return Theta((-1.0) * v2, v3, i) - Theta(v3, (-1.0) * v2, i) + Theta((-1.0) * v3, v4, i);
+
+    force += - Theta((-1.0) * v2, v3, i);
+    force += - Theta(v3, (-1.0) * v2, i);
+    force += Theta((-1.0) * v3, v4, i);
 
   } else if( n == ProteinLength - 2){
     std::vector<double> v1 = Protein[n-1].q - Protein[n-2].q;
     std::vector<double> v2 = Protein[n].q - Protein[n-1].q;
     std::vector<double> v3 = Protein[n+1].q - Protein[n].q;
-    return Theta(v2,(-1.0) * v1,i) - Theta((-1.0) * v2, v3, i) - Theta(v3, (-1.0) * v2, i);
+
+    force += Theta(v2,(-1.0) * v1,i);
+    force += - Theta((-1.0) * v2, v3, i);
+    force += - Theta(v3, (-1.0) * v2, i);
 
   } else if( n == ProteinLength - 1){
     std::vector<double> v1 = Protein[n-1].q - Protein[n-2].q;
     std::vector<double> v2 = Protein[n].q - Protein[n-1].q;
-    return Theta(v2,(-1.0) * v1,i);
 
+    force += Theta(v2,(-1.0) * v1,i);
   } else {
     std::vector<double> v1 = Protein[n-1].q - Protein[n-2].q;
     std::vector<double> v2 = Protein[n].q - Protein[n-1].q;
     std::vector<double> v3 = Protein[n+1].q - Protein[n].q;
     std::vector<double> v4 = Protein[n+2].q - Protein[n+1].q;
-    return Theta(v2,(-1.0) * v1,i) - Theta((-1.0) * v2, v3, i) - Theta(v3, (-1.0) * v2, i) + Theta((-1.0) * v3, v4, i);
+
+    ip12 = IP((-1.0) * v1
+
+    force += Theta(v2,(-1.0) * v1,i);
+    force += - Theta((-1.0) * v2, v3, i);
+    force += - Theta(v3, (-1.0) * v2, i);
+    force += Theta((-1.0) * v3, v4, i);
+
   }
+  return force;
 }
 
 
@@ -187,15 +212,28 @@ double MyClass::F(double t, int n, int i) {
 }
 
 double MyClass::G( double t, int n, int i) {
+  double force = 0;
   if (n == ProteinLength-1) {
 		if(i == 0){
-      return  bond_interaction(n,0) + HPN_interaction(n,i) + ExternalForce - Protein[n].p[i] /*+ angle_interaction(n,i)*/;
+      force +=  bond_interaction(n,0);
+      force += HPN_interaction(n,i);
+      force += ExternalForce;
+      force += - Protein[n].p[i];
+      force += angle_interaction(n,i);
     } else {
-      return bond_interaction(n,i) + HPN_interaction(n,i) - Protein[n].p[i] /*+ angle_interaction(n,i)*/;
+      force += bond_interaction(n,i);
+      force += HPN_interaction(n,i);
+      force += - Protein[n].p[i];
+      force += angle_interaction(n,i);
     }
   }	else {
-    return bond_interaction(n,i) - bond_interaction(n+1,i) + HPN_interaction(n,i) - Protein[n].p[i] /*+ angle_interaction(n,i)*/;
+    force += bond_interaction(n,i);
+    force += -bond_interaction(n+1,i);
+    force += HPN_interaction(n, i);
+    force += - Protein[n].p[i];
+    force += angle_interaction(n, i);
   }
+  return force;
 }
 
 //----------------------------------------------------------------------
