@@ -57,7 +57,6 @@ class MyClass{
 		double F(double t, int n, int i);
 		double G(double t, int n, int i);
     // angle interaction
-    double Theta(std::vector<double> v1, std::vector<double> v2, int i);
     double angle_interaction(int n, int i);
 public:
 		double ExternalForce;

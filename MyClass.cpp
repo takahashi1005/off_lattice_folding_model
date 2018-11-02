@@ -152,12 +152,6 @@ double MyClass::HPN_interaction(int n,int i){
 //----------------------------------------------------------------------
 // Angle
 //----------------------------------------------------------------------
-double MyClass::Theta(std::vector<double> v1, std::vector<double> v2, int i){
-  double theta = angle(v1,v2);
-  double ip = IP(v1,v2);
-
-  return k_theta * (theta - theta_zero) / sqrt( pow(abs(v1)*abs(v2), 2.0) -ip *ip) * (v2[i] - IP(v1, v2) / pow(abs(v1), 2.0) * v1[i] );
-}
 
 double MyClass::angle_interaction(int n, int i){
   double force = 0.0;
@@ -167,41 +161,91 @@ double MyClass::angle_interaction(int n, int i){
     std::vector<double> v3 = Protein[n+1].q - Protein[n].q;
     std::vector<double> v4 = Protein[n+2].q - Protein[n+1].q;
 
-    force += - Theta((-1.0) * v2, v3, i);
-    force += - Theta(v3, (-1.0) * v2, i);
-    force += Theta((-1.0) * v3, v4, i);
+    double a2 = abs(v2);
+    double a3 = abs(v3);
+    double a4 = abs(v4);
+
+    double ip23 = - IP(v2, v3);
+    double ip34 = - IP(v3, v4);
+
+    double theta23 = acos(ip23 / a2 / a3);
+    double theta34 = acos(ip34 / a3 / a4);
+
+    double co23 = k_theta * (theta23 - theta_zero) / sqrt( pow(a2 * a3, 2.0) - ip23 * ip23);
+    double co34 = k_theta * (theta34 - theta_zero) / sqrt( pow(a3 * a4, 2.0) - ip34 * ip34);
+
+    force += - co23 * (v3[i] - ip23 / a2 / a2 * (-1.0) * v2[i]);
+    force += - co23 * ((-1.0) * v2[i] - ip23 / a3 / a3 * v3[i]);
+    force += co34 * (v4[i] - ip34 / a3 / a3 *(-1.0) * v3[i]);
 
   } else if( n == ProteinLength - 2){
     std::vector<double> v1 = Protein[n-1].q - Protein[n-2].q;
     std::vector<double> v2 = Protein[n].q - Protein[n-1].q;
     std::vector<double> v3 = Protein[n+1].q - Protein[n].q;
 
-    force += Theta(v2,(-1.0) * v1,i);
-    force += - Theta((-1.0) * v2, v3, i);
-    force += - Theta(v3, (-1.0) * v2, i);
+    double a1 = abs(v1);
+    double a2 = abs(v2);
+    double a3 = abs(v3);
+
+    double ip12 = - IP(v1, v2);
+    double ip23 = - IP(v2, v3);
+
+    double theta12 = acos(ip12 / a1 / a2);
+    double theta23 = acos(ip23 / a2 / a3);
+
+    double co12 = k_theta * (theta12 - theta_zero) / sqrt( pow(a1 * a2, 2.0) - ip12 * ip12);
+    double co23 = k_theta * (theta23 - theta_zero) / sqrt( pow(a2 * a3, 2.0) - ip23 * ip23);
+
+    force += co12 * ((-1.0)*v1[i] - ip12 / a2 / a2 * v2[i]);
+    force += - co23 * (v3[i] - ip23 / a2 / a2 * (-1.0) * v2[i]);
+    force += - co23 * ((-1.0) * v2[i] - ip23 / a3 / a3 * v3[i]);
 
   } else if( n == ProteinLength - 1){
     std::vector<double> v1 = Protein[n-1].q - Protein[n-2].q;
     std::vector<double> v2 = Protein[n].q - Protein[n-1].q;
 
-    force += Theta(v2,(-1.0) * v1,i);
+    double a1 = abs(v1);
+    double a2 = abs(v2);
+
+    double ip12 = - IP(v1, v2);
+
+    double theta12 = acos(ip12 / a1 / a2);
+
+    double co12 = k_theta * (theta12 - theta_zero) / sqrt( pow(a1 * a2, 2.0) - ip12 * ip12);
+
+    force += co12 * ((-1.0)*v1[i] - ip12 / a2 / a2 * v2[i]);
+
   } else {
     std::vector<double> v1 = Protein[n-1].q - Protein[n-2].q;
     std::vector<double> v2 = Protein[n].q - Protein[n-1].q;
     std::vector<double> v3 = Protein[n+1].q - Protein[n].q;
     std::vector<double> v4 = Protein[n+2].q - Protein[n+1].q;
 
-    ip12 = IP((-1.0) * v1
+    double a1 = abs(v1);
+    double a2 = abs(v2);
+    double a3 = abs(v3);
+    double a4 = abs(v4);
 
-    force += Theta(v2,(-1.0) * v1,i);
-    force += - Theta((-1.0) * v2, v3, i);
-    force += - Theta(v3, (-1.0) * v2, i);
-    force += Theta((-1.0) * v3, v4, i);
+    double ip12 = - IP(v1, v2);
+    double ip23 = - IP(v2, v3);
+    double ip34 = - IP(v3, v4);
+
+    double theta12 = acos(ip12 / a1 / a2);
+    double theta23 = acos(ip23 / a2 / a3);
+    double theta34 = acos(ip34 / a3 / a4);
+
+    double co12 = k_theta * (theta12 - theta_zero) / sqrt( pow(a1 * a2, 2.0) - ip12 * ip12);
+    double co23 = k_theta * (theta23 - theta_zero) / sqrt( pow(a2 * a3, 2.0) - ip23 * ip23);
+    double co34 = k_theta * (theta34 - theta_zero) / sqrt( pow(a3 * a4, 2.0) - ip34 * ip34);
+
+    force += co12 * ((-1.0)*v1[i] - ip12 / a2 / a2 * v2[i]);
+    force += - co23 * (v3[i] - ip23 / a2 / a2 * (-1.0) * v2[i]);
+    force += - co23 * ((-1.0) * v2[i] - ip23 / a3 / a3 * v3[i]);
+    force += co34 * (v4[i] - ip34 / a3 / a3 *(-1.0) * v3[i]);
 
   }
   return force;
 }
-
 
 //----------------------------------------------------------------------
 // Equation of Motion
